@@ -41,9 +41,12 @@ class TraceHook(DBG_Hooks, HexRaysUtils):
 
         return get_reg_val(reg_name)
 
-    def get_dword_ptr(self, ptr):
+    def get_ptr_value(self, ptr):
         
-        return get_wide_dword(ptr)
+        if idaapi.get_inf_structure().is_64bit():
+            return get_qword(ptr)
+        else:
+            return get_wide_dword(ptr)
     
     def get_string(self, ea, is_unicode=False):
 

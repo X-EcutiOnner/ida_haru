@@ -13,7 +13,7 @@ import idautils
 import re
 
 # Global options/variables
-g_DEBUG = False
+g_DEBUG = True
 g_CACHE = True
 g_ASCII_TYPES = ['CHAR *', 'CONST CHAR *', 'LPSTR', 'LPCSTR']
 g_UNICODE_TYPES = ['WCHAR *', 'CONST WCHAR *', 'LPWSTR', 'LPCWSTR']
@@ -178,11 +178,14 @@ class HexRaysUtils():
         raise NotImplementedError()
     
     #@abstractmethod
-    def get_dword_ptr(self, ptr):
+    def get_ptr_value(self, ptr):
         raise NotImplementedError()
 
     #@abstractmethod
     def get_string(self, ea, is_unicode=False):
+        raise NotImplementedError()
+
+    def get_bytes(self, ea):
         raise NotImplementedError()
 
     def get_fn_offset(self, ea):
@@ -313,13 +316,28 @@ class HexRaysUtils():
                             if i == 0:
                                 ea = self.get_reg_value("ECX")
                             else:
-                                ea = self.get_dword_ptr(self.get_reg_value("ESP") + (i - 1) * 4)
-                        else: # __stdcall, __cdecl, __thiscall, etc.
+                                ea = self.get_ptr_value(self.get_reg_value("ESP") + (i - 1) * 4)
+                        elif str(expr.x.type).find('__fastcall') != -1:
+                            debug('fastcall')
+                            if i == 0:
+                                ea = self.get_reg_value("RCX")
+                            elif i == 1:
+                                ea = self.get_reg_value("RDX")
+                            elif i == 2:
+                                ea = self.get_reg_value("R8")
+                            elif i == 3:
+                                ea = self.get_reg_value("R9")
+                            else:
+                                ea = self.get_ptr_value(self.get_reg_value("RSP") + (i - 4) * 4)
+                        else: # __stdcall, __cdecl, etc.
                             debug('other calling conventions')
-                            ea = self.get_dword_ptr(self.get_reg_value("ESP") + i * 4)
+                            ea = self.get_ptr_value(self.get_reg_value("ESP") + i * 4)
                         
                         debug(f'{ea=:#x}')
                         if str(arg.type).upper() in g_ASCII_TYPES or callee_name.find(g_stub_GetProcAddress) != -1:
+                            #if i == 2:
+                            #    res = self.get_bytes(ea)
+                            #else:
                             res = self.get_string(ea)
                         else: # g_UNICODE_TYPES
                             res = self.get_string(ea, is_unicode=True)

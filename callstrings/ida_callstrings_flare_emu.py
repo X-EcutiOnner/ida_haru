@@ -16,7 +16,7 @@ idaapi.require('flare_emu_hooks')
 import flare_emu, flare_emu_hooks, unicorn
 
 # Global options
-g_DEBUG = True
+g_DEBUG = False
 g_DEBUG_FLARE_EMU = False
 g_FLAG_ALL_PATHS = False # True: iterateAllPaths, False: emulateRange
 g_MAX_SAME_STATE_VAR = 0x1000 # to detect infinite loop by CFF
@@ -55,16 +55,22 @@ class HexRaysEmu(HexRaysUtils):
 
         return self.eh.getRegVal(reg_name.lower())
 
-    def get_dword_ptr(self, ptr):
+    def get_ptr_value(self, ptr):
         
         return self.eh.getEmuPtr(ptr)
     
     def get_string(self, ea, is_unicode=False):
 
         return self.eh.getEmuWideString(ea).decode('utf-16') if is_unicode else self.eh.getEmuString(ea).decode()
+    
+    def get_bytes(self, ea):
+
+        return self.eh.getEmuBytes(ea, 0x20)
 
 
 def call_hook(address, argv, funcName, userData):
+
+    debug(f'call_hook at {address:#x}')
 
     #is_64bit = True if idaapi.get_inf_structure().lflags & idaapi.LFLG_64BIT == 4 else False
     hremu = userData["hremu"]
@@ -273,12 +279,16 @@ def main():
                 'hremu': hremu,
                 'inst_visit_cnt': inst_visit_cnt,
             }
-            if g_FLAG_ALL_PATHS:
-                info('The mode is iterateAllPaths')
-                eh.iterateAllPaths(fva, noop, hookData=userData, callHook=call_hook)
-            else:
-                info('The mode is emulateRange')
-                eh.emulateRange(fva, callHook=call_hook, instructionHook=inst_hook, hookData=userData)
+
+            try:
+                if g_FLAG_ALL_PATHS:
+                    info('The mode is iterateAllPaths')
+                    eh.iterateAllPaths(fva, noop, hookData=userData, callHook=call_hook)
+                else:
+                    info('The mode is emulateRange')
+                    eh.emulateRange(fva, callHook=call_hook, instructionHook=inst_hook, hookData=userData)
+            except unicorn.unicorn.UcError as e:
+                error(f'{fva:#x}: unicorn error ({e})')
 
             refresh_idaview_anyway()
             eh.resetEmulatorHeapAndStack()

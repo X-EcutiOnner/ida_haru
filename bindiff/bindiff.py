@@ -12,14 +12,21 @@ import idb
 logging.basicConfig(level=logging.ERROR) # to suppress python-idb warning
 
 # paths (should be edited)
-g_out_dir = r'C:\analysisw\tmp\bindiff'
-g_ida_dir = r'C:\analysisw\tool\IDA'
-g_differ_path = r"C:\Program Files\BinDiff\bin\bindiff.exe"
+# Windows 
+#g_out_dir = r'C:\analysisw\tmp\bindiff'
+#g_ida_dir = r'C:\analysisw\tool\IDA'
+#g_differ_path = r"C:\Program Files\BinDiff\bin\bindiff.exe"
+# MacOS
+g_out_dir = r'/Users/haru/analysis/tmp/bindiff'
+#g_ida_dir = r'/Applications/IDA/ida.app/Contents/MacOS'
+g_ida32_path = r'/Applications/IDA/ida.app/Contents/MacOS/ida'
+g_ida64_path = r'/Applications/IDA/ida64.app/Contents/MacOS/ida64'
+g_differ_path = r"/Applications/BinDiff/BinDiff.app/Contents/MacOS/bin/bindiff"
 g_exp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bindiff_export.idc')
 g_save_fname_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'save_func_names_7x.py')
 
 # parameters
-g_ws_th = 0.20 # whole binary similarity threshold
+g_ws_th = 0.15 # whole binary similarity threshold
 g_fs_th = 0.70 # function similarity threshold
 g_ins_th = 10 # instruction threshold
 g_bb_th = 0 # basic block threshold
@@ -141,8 +148,9 @@ class BinDiff(object):
 
     def _get_ida_path(self, arch):
         #idaq = 'idaq.exe' if arch == '32-bit' else 'idaq64.exe'
-        idaq = 'ida.exe' if arch == '32-bit' else 'ida64.exe'
-        return os.path.join(g_ida_dir, idaq)        
+        #idaq = g_ida32_name if arch == '32-bit' else g_ida64_name
+        #return os.path.join(g_ida_dir, idaq)
+        return g_ida32_path if arch == '32-bit' else g_ida64_path
 
     def _load_func_names_pyidb(self, idb_path): # exlcude library/thunk functions
         pickle_path = os.path.splitext(os.path.join(self._out_dir, os.path.basename(idb_path)))[0] + '_func_names.pickle'
